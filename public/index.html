@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Puffn Steam → Ubi Keys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://js.stripe.com/v3/"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #05010a;
+      --bg-soft: #0b0216;
+      --bg-card: #090013;
+      --accent: #f472ff;
+      --accent-strong: #ec4899;
+      --accent-soft: rgba(244, 114, 255, 0.2);
+      --accent-gradient: linear-gradient(120deg, #ec4899, #8b5cf6, #f472ff);
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --border-subtle: #1f2937;
+      --danger: #f97373;
+      --shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.9);
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 35%, #000 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* NAVBAR */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(
+        to bottom,
+        rgba(5, 1, 10, 0.95),
+        rgba(5, 1, 10, 0.85),
+        rgba(5, 1, 10, 0.6)
+      );
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      background-image: conic-gradient(
+        from 200deg,
+        #ec4899,
+        #8b5cf6,
+        #22d3ee,
+        #ec4899
+      );
+      padding: 2px;
+    }
+
+    .brand-logo-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 0, #f472ff 0, #020617 40%, #000 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .brand-text-main {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .brand-text-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-pill {
+      font-size: 0.77rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #a7f3d0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+    }
+
+    .nav-link {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+    }
+
+    .nav-cta {
+      padding: 0.4rem 0.95rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      font-size: 0.8rem;
+      background: rgba(15, 23, 42, 0.9);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      cursor: pointer;
+    }
+
+    /* LAYOUT */
+    .page {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 3rem;
+    }
+
+    section {
+      margin-bottom: 3.5rem;
+    }
+
+    /* HERO */
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(244, 114, 255, 0.4);
+      background: radial-gradient(circle at 0 0, rgba(236, 72, 153, 0.35), transparent 60%);
+      color: #f9a8d4;
+      margin-bottom: 0.8rem;
+    }
+
+    .hero-kicker-badge {
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #e5e7eb;
+    }
+
+    .hero-title {
+      font-size: clamp(2.1rem, 4vw, 2.9rem);
+      line-height: 1.1;
+      margin: 0 0 0.5rem;
+    }
+
+    .hero-title span.highlight {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .hero-subtitle {
+      margin: 0 0 1.4rem;
+      color: var(--text-muted);
+      max-width: 32rem;
+      font-size: 0.98rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-price {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .hero-price span {
+      font-size: 1.4rem;
+      color: #f9a8ff;
+    }
+
+    .hero-badge-soft {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+      color: var(--text-muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-primary {
+      padding: 0.8rem 1.5rem;
+      border-radius: 999px;
+      border: 0;
+      font-weight: 600;
+      font-size: 0.98rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      background-image: var(--accent-gradient);
+      color: #0b0216;
+      cursor: pointer;
+      box-shadow: 0 22px 45px rgba(236, 72, 153, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.25), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn-primary:hover::after {
+      opacity: 1;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-ghost {
+      padding: 0.7rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .hero-trust {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .hero-trust strong {
+      color: #e5e7eb;
+    }
+
+    /* HERO RIGHT PANEL (PRODUCT CARD) */
+    .hero-card-wrap {
+      position: relative;
+    }
+
+    .hero-glow {
+      position: absolute;
+      inset: -30px;
+      background:
+        radial-gradient(circle at 10% 0, rgba(244, 114, 255, 0.4), transparent 65%),
+        radial-gradient(circle at 90% 100%, rgba(129, 140, 248, 0.4), transparent 65%);
+      opacity: 0.75;
+      filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .product-card {
+      position: relative;
+      border-radius: var(--radius-xl);
+      background: radial-gradient(circle at top left, #111827 0, #020617 45%, #020617 100%);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      overflow: hidden;
+      box-shadow: var(--shadow-strong);
+      padding: 1rem;
+      isolation: isolate;
+    }
+
+    .product-banner {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: linear-gradient(
+        135deg,
+        rgba(236, 72, 153, 0.45),
+        rgba(55, 48, 163, 0.85),
+        rgba(15, 23, 42, 1)
+      );
+      height: 170px;
+      display: grid;
+      grid-template-columns: 0.8fr 1fr;
+      gap: 0;
+    }
+
+    .banner-left {
+      position: relative;
+      padding: 0.9rem;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .banner-cheat-box {
+      width: 100%;
+      border-radius: 14px;
+      background: radial-gradient(circle at 0 0, #f472ff 0, #020617 55%);
+      border: 1px solid rgba(249, 168, 255, 0.65);
+      padding: 0.7rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .banner-cheat-title {
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f9a8ff;
+      margin-bottom: 0.15rem;
+    }
+
+    .banner-cheat-main {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .banner-cheat-tag {
+      font-size: 0.7rem;
+      color: #f3e8ff;
+      opacity: 0.9;
+    }
+
+    .banner-right {
+      position: relative;
+      padding: 0.9rem 1rem 0.9rem 0.3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .banner-pill-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.4rem;
+      font-size: 0.7rem;
+    }
+
+    .banner-pill {
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: #e5e7eb;
+      backdrop-filter: blur(12px);
+    }
+
+    .banner-price-tag {
+      align-self: flex-end;
+      padding: 0.6rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(248, 250, 252, 0.9);
+      font-size: 0.8rem;
+      text-align: right;
+    }
+
+    .banner-price-tag span {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fef3ff;
+    }
+
+    .banner-grid {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(
+          rgba(248, 250, 252, 0.06) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(248, 250, 252, 0.06) 1px,
+          transparent 1px
+        );
+      background-size: 28px 28px;
+      mix-blend-mode: soft-light;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .banner-figure {
+      position: absolute;
+      right: -5px;
+      bottom: -12px;
+      width: 120px;
+      height: 140px;
+      border-radius: 32px;
+      background: radial-gradient(circle at 30% 0, #f472ff 0, #020617 40%);
+      border: 1px solid rgba(249, 168, 255, 0.4);
+      box-shadow: 0 0 40px rgba(236, 72, 153, 0.9);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #fdf2ff;
+    }
+
+    .product-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      gap: 1rem;
+      font-size: 0.8rem;
+    }
+
+    .product-meta {
+      color: var(--text-muted);
+    }
+
+    .product-rating {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: #fbbf24;
+    }
+
+    .product-rating span {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .product-email-box {
+      margin-top: 1.1rem;
+      padding: 0.8rem 0.9rem;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .input-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.78rem;
+    }
+
+    .input-label-row span {
+      color: var(--text-muted);
+    }
+
+    .input-label-row strong {
+      color: #e5e7eb;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.3rem;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 0.6rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: #020617;
+      color: #f9fafb;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .input-field::placeholder {
+      color: #6b7280;
+    }
+
+    .product-note {
+      margin-top: 0.3rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .error-message {
+      margin-top: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--danger);
+    }
+
+    /* SECTIONS: SHARED */
+    .section-title {
+      font-size: 1.6rem;
+      margin: 0 0 0.65rem;
+      text-align: center;
+    }
+
+    .section-title span {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      max-width: 30rem;
+      margin: 0 auto 2.1rem;
+    }
+
+    /* HOW IT WORKS */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.4rem;
+    }
+
+    .step-card {
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top, #111827 0, #020617 55%);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 1.3rem 1.2rem 1.1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step-number {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(249, 168, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      margin-bottom: 0.65rem;
+      color: #fdf2ff;
+    }
+
+    .step-title {
+      font-size: 0.95rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-body {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* FAQ */
+    .faq-list {
+      max-width: 700px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .faq-item {
+      border-radius: var(--radius-lg);
+      background: #050111;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 0.9rem 1rem;
+    }
+
+    .faq-q {
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .faq-a {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* FOOTER */
+    .footer {
+      border-top: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 1.2rem 1.25rem 1.6rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: center;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-pill {
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      cursor: pointer;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .hero-card-wrap {
+        order: -1;
+      }
+      .product-banner {
+        height: 190px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .steps {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .nav-inner {
+        padding-inline: 1rem;
+      }
+      .page {
+        padding-inline: 1rem;
+      }
+      .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .input-row {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .nav-right .nav-link {
+        display: none;
+      }
+      .product-banner {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .banner-figure {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="brand-logo">
+          <div class="brand-logo-inner">PFN</div>
+        </div>
+        <div>
+          <div class="brand-text-main">Puffn Keys</div>
+          <div class="brand-text-sub">Steam → Ubi instant delivery</div>
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          Keys in stock • auto-delivery
+        </div>
+        <div class="nav-link" onclick="scrollToSection('how-it-works')">How it works</div>
+        <div class="nav-link" onclick="scrollToSection('faq')">FAQ</div>
+        <button class="nav-cta" type="button" onclick="scrollToSection('top')">
+          <span>View product</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div>
+        <div class="hero-kicker">
+          <span class="hero-kicker-badge">Verified</span>
+          Puffn Steam → Ubisoft transfer keys
+        </div>
+        <h1 class="hero-title">
+          Game-ready
+          <span class="highlight">Puffn Keys</span>
+          with instant email delivery.
+        </h1>
+        <p class="hero-subtitle">
+          Purchase a Puffn Steam → Ubi key and get it delivered to your inbox
+          in seconds. Fully automated, no support tickets, no waiting.
+        </p>
+        <div class="hero-meta">
+          <div class="hero-price">
+            Only <span>$2.00</span> per key
+          </div>
+          <div class="hero-badge-soft">
+            🔐 One-time purchase • key works worldwide*
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn-primary" id="hero-buy">
+            <span>Purchase Puffn Key</span>
+            <span>→</span>
+          </button>
+          <button class="btn-ghost" type="button" onclick="scrollToSection('how-it-works')">
+            <span>See how it works</span>
+          </button>
+        </div>
+        <div class="hero-trust">
+          <div><strong>Auto key delivery</strong> after payment</div>
+          <div>Stripe secured payments</div>
+          <div>Order + receipt sent via email</div>
+        </div>
+      </div>
+
+      <div class="hero-card-wrap">
+        <div class="hero-glow"></div>
+        <div class="product-card">
+          <div class="product-banner">
+            <div class="banner-left">
+              <div class="banner-cheat-box">
+                <div>
+                  <div class="banner-cheat-title">Puffn Exclusive</div>
+                  <div class="banner-cheat-main">
+                    Steam →<br />
+                    Ubi Transfer Key
+                  </div>
+                  <div class="banner-cheat-tag">
+                    Bind once. Redeem and play instantly.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="banner-right">
+              <div class="banner-pill-row">
+                <div class="banner-pill">Auto-delivery</div>
+                <div class="banner-pill">Email receipt</div>
+              </div>
+              <div class="banner-price-tag">
+                From
+                <span>$19.99</span>
+                per key
+              </div>
+              <div class="banner-grid"></div>
+              <div class="banner-figure">
+                Puffn<br />Certified
+              </div>
+            </div>
+          </div>
+
+          <div class="product-info-row">
+            <div class="product-meta">
+              Puffn Steam → Ubi Key • 1 device<br />
+              <span>Instant delivery • redeemable once</span>
+            </div>
+            <div class="product-rating">
+              ★★★★★ <span>(trusted by buyers)</span>
+            </div>
+          </div>
+
+          <div class="product-email-box">
+            <div class="input-label-row">
+              <strong>Email for key delivery</strong>
+              <span>We’ll send your key & receipt here</span>
+            </div>
+            <div class="input-row">
+              <input
+                type="email"
+                id="email"
+                class="input-field"
+                placeholder="you@example.com"
+              />
+              <button class="btn-primary" id="checkout-button" type="button">
+                <span>Buy Key</span>
+              </button>
+            </div>
+            <div class="product-note">
+              • Your card info is processed securely by Stripe.<br />
+              • Puffn key + payment receipt will be emailed instantly after
+              payment is confirmed.
+            </div>
+            <div class="error-message" id="error-message" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how-it-works">
+      <h2 class="section-title">How <span>Puffn Keys</span> Work</h2>
+      <p class="section-subtitle">
+        Three quick steps from purchase to playing. Everything is automated, no
+        manual handling.
+      </p>
+      <div class="steps">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-title">Enter your email & purchase</div>
+          <div class="step-body">
+            Type the email where you want the key delivered, then pay securely
+            with Stripe. Your card info never touches our servers.
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-title">Auto-generate Puffn key</div>
+          <div class="step-body">
+            Once payment is confirmed, our system instantly assigns you an
+            unused Puffn Steam → Ubi transfer key from our stock.
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-title">Check your inbox & redeem</div>
+          <div class="step-body">
+            You receive an email with your key + payment receipt and basic
+            instructions. Redeem your key and enjoy – that’s it.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <h2 class="section-title">Questions & <span>Answers</span></h2>
+      <p class="section-subtitle">
+        If you’re unsure about anything, start here. You can always contact us
+        if you need help.
+      </p>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">How do I receive my Puffn Steam → Ubi key?</div>
+          <div class="faq-a">
+            After Stripe confirms your payment, our system automatically
+            assigns an unused key and emails it to the address you entered,
+            along with your payment receipt.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How fast is delivery?</div>
+          <div class="faq-a">
+            Delivery is instant in most cases. If you don’t see the email
+            within a couple of minutes, check your spam/junk folder. If it’s
+            still missing, contact support and we’ll resend it.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is my payment safe?</div>
+          <div class="faq-a">
+            Yes. All payments are processed by Stripe, a global payment
+            provider. We never see or store your card details – we only receive
+            the confirmation that your payment succeeded.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Can I get a refund?</div>
+          <div class="faq-a">
+            Because keys are digital and one-time use, we cannot refund keys
+            that have already been revealed or redeemed. If your key doesn’t
+            work, contact us and we’ll help you sort it out.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>© <span id="year"></span> Puffn Keys. All rights reserved.</div>
+      <div class="footer-links">
+        <div class="footer-pill">Discord support</div>
+        <div class="footer-pill">Email support</div>
+        <div class="footer-pill">Terms</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Set current year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // Stripe init – replace with your publishable key
+    const stripe = Stripe("pk_test_YOUR_PUBLISHABLE_KEY_HERE");
+
+    const emailInput = document.getElementById("email");
+    const errorBox = document.getElementById("error-message");
+    const checkoutButton = document.getElementById("checkout-button");
+    const heroBuy = document.getElementById("hero-buy");
+
+    heroBuy.addEventListener("click", () => {
+      scrollToSection("top");
+      emailInput.focus();
+    });
+
+    function validateEmail(value) {
+      return /\S+@\S+\.\S+/.test(value);
+    }
+
+    async function startCheckout() {
+      const email = emailInput.value.trim();
+      errorBox.style.display = "none";
+
+      if (!email) {
+        errorBox.textContent = "Please enter the email where we should send your key.";
+        errorBox.style.display = "block";
+        return;
+      }
+      if (!validateEmail(email)) {
+        errorBox.textContent = "That doesn’t look like a valid email address.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      checkoutButton.disabled = true;
+      checkoutButton.innerHTML = "<span>Redirecting…</span>";
+
+      try {
+        const res = await fetch("/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+        if (data.error || !data.id) {
+          console.error(data);
+          errorBox.textContent = "Could not create a payment session. Please try again.";
+          errorBox.style.display = "block";
+          checkoutButton.disabled = false;
+          checkoutButton.innerHTML = "<span>Buy Key</span>";
+          return;
+        }
+
+        const result = await stripe.redirectToCheckout({ sessionId: data.id });
+
+        if (result.error) {
+          errorBox.textContent = result.error.message || "Stripe checkout failed.";
+          errorBox.style.display = "block";
+          checkoutButton.disabled = false;
+          checkoutButton.innerHTML = "<span>Buy Key</span>";
+        }
+      } catch (err) {
+        console.error(err);
+        errorBox.textContent = "Something went wrong connecting to the payment server.";
+        errorBox.style.display = "block";
+        checkoutButton.disabled = false;
+        checkoutButton.innerHTML = "<span>Buy Key</span>";
+      }
+    }
+
+    checkoutButton.addEventListener("click", startCheckout);
+  </script>
+</body>
+</html>
