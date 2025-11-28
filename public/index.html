@@ -1,78 +1,316 @@
-<script>
-  // Set current year
-  document.getElementById("year").textContent = new Date().getFullYear();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Puffn Steam → Ubi Keys</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  function scrollToSection(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
 
-  // Your publishable Stripe key (optional)
-  const stripe = Stripe("pk_test_YOUR_PUBLISHABLE_KEY_HERE");
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
-  const emailInput = document.getElementById("email");
-  const errorBox = document.getElementById("error-message");
-  const checkoutButton = document.getElementById("checkout-button");
-  const heroBuy = document.getElementById("hero-buy");
-
-  heroBuy.addEventListener("click", () => {
-    scrollToSection("top");
-    emailInput.focus();
-  });
-
-  function validateEmail(value) {
-    return /\S+@\S+\.\S+/.test(value);
-  }
-
-  async function startCheckout() {
-    const email = emailInput.value.trim();
-    errorBox.style.display = "none";
-
-    if (!email) {
-      errorBox.textContent = "Please enter the email where your key will be delivered.";
-      errorBox.style.display = "block";
-      return;
-    }
-    if (!validateEmail(email)) {
-      errorBox.textContent = "Invalid email format.";
-      errorBox.style.display = "block";
-      return;
+  <style>
+    :root {
+      --bg: #05010a;
+      --bg-soft: #0b0216;
+      --bg-card: #090013;
+      --accent: #f472ff;
+      --accent-strong: #ec4899;
+      --accent-soft: rgba(244, 114, 255, 0.2);
+      --accent-gradient: linear-gradient(120deg, #ec4899, #8b5cf6, #f472ff);
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --border-subtle: #1f2937;
+      --danger: #f97373;
+      --shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.9);
+      --radius-lg: 18px;
+      --radius-xl: 24px;
     }
 
-    checkoutButton.disabled = true;
-    checkoutButton.innerHTML = "<span>Redirecting…</span>";
+    * { box-sizing: border-box; }
 
-    try {
-      // ⭐ FIXED — Calls your Render backend correctly
-      const res = await fetch("https://puffn-backend-11jo.onrender.com/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Outfit", sans-serif;
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 35%, #000 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
 
-      const data = await res.json();
-      console.log("Stripe Response:", data);
+    body { display: flex; flex-direction: column; }
 
-      if (!data.url) {
-        errorBox.textContent = "Could not create a payment session.";
+    a { color: inherit; text-decoration: none; }
+
+    /* NAVBAR */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(
+        to bottom,
+        rgba(5, 1, 10, 0.95),
+        rgba(5, 1, 10, 0.85),
+        rgba(5, 1, 10, 0.6)
+      );
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* BRAND */
+    .brand { display: flex; align-items: center; gap: 0.7rem; }
+    .brand-logo {
+      width: 38px; height: 38px; border-radius: 999px;
+      background-image: conic-gradient(from 200deg, #ec4899, #8b5cf6, #22d3ee, #ec4899);
+      padding: 2px;
+    }
+    .brand-logo-inner {
+      width: 100%; height: 100%; border-radius: inherit;
+      background: radial-gradient(circle at 30% 0, #f472ff 0, #020617 40%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 800;
+    }
+    .brand-text-main { font-size: 1.1rem; font-weight: 700; }
+    .brand-text-sub { color: var(--text-muted); font-size: 0.75rem; }
+
+    /* NAV RIGHT */
+    .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+    .status-pill {
+      font-size: 0.77rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #a7f3d0;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+    }
+    .nav-link { color: var(--text-muted); cursor: pointer; }
+    .nav-link:hover { color: var(--accent); }
+
+    .nav-cta {
+      padding: 0.4rem 0.95rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.9);
+      cursor: pointer;
+    }
+
+    /* PAGE */
+    .page {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: auto;
+      padding: 2.5rem 1.25rem 3rem;
+    }
+
+    /* HERO GRID */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .hero-title {
+      font-size: clamp(2.1rem, 4vw, 2.9rem);
+      margin: 0 0 0.5rem;
+      line-height: 1.1;
+    }
+
+    .highlight {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .btn-primary {
+      padding: 0.8rem 1.5rem;
+      border-radius: 999px;
+      border: 0;
+      font-weight: 600;
+      background-image: var(--accent-gradient);
+      color: #0b0216;
+      cursor: pointer;
+    }
+
+    /* PRODUCT CARD */
+    .product-card {
+      border-radius: var(--radius-xl);
+      background: radial-gradient(circle at top left, #111827, #020617);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 1rem;
+      box-shadow: var(--shadow-strong);
+    }
+
+    .product-email-box { margin-top: 1rem; }
+    .input-field {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(55,65,81,0.9);
+      background: #020617;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .error-message { color: var(--danger); margin-top: 0.35rem; }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="brand-logo"><div class="brand-logo-inner">PFN</div></div>
+        <div>
+          <div class="brand-text-main">Puffn Keys</div>
+          <div class="brand-text-sub">Steam → Ubi instant delivery</div>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <div class="status-pill"><span class="status-dot"></span>Keys in stock</div>
+        <div class="nav-link" onclick="scrollToSection('how-it-works')">How it works</div>
+        <div class="nav-link" onclick="scrollToSection('faq')">FAQ</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero" id="top">
+      <div>
+        <h1 class="hero-title">
+          Game-ready <span class="highlight">Puffn Keys</span> delivered instantly.
+        </h1>
+
+        <p class="hero-subtitle">
+          Purchase a Steam → Ubi key and receive it instantly by email.
+        </p>
+
+        <button class="btn-primary" id="hero-buy">Purchase Puffn Key →</button>
+      </div>
+
+      <div class="product-card">
+        <h3>Puffn Steam → Ubi Transfer Key</h3>
+        <p>Instant email delivery • redeemable once</p>
+
+        <div class="product-email-box">
+          <input type="email" id="email" class="input-field" placeholder="you@example.com" />
+          <button class="btn-primary" id="checkout-button">Buy Key</button>
+          <div id="error-message" class="error-message" style="display:none;"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <h2>How It Works</h2>
+      <p>Buy → Auto-generate key → Receive by email</p>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>© <span id="year"></span> Puffn Keys.</div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+
+    const stripe = Stripe("pk_live_51SY4eoD3fPIqoTp3I5VGQSbMKRTcUwZCGqeG0ojAzXt9ZR1darPllEdWxYUTer0fbU6sn9u5DsjXgnUWDUgK4ihV00gEK3zCQG");
+    const emailInput = document.getElementById("email");
+    const errorBox = document.getElementById("error-message");
+    const checkoutButton = document.getElementById("checkout-button");
+    const heroBuy = document.getElementById("hero-buy");
+
+    heroBuy.addEventListener("click", () => {
+      scrollToSection("top");
+      emailInput.focus();
+    });
+
+    function validateEmail(value) {
+      return /\S+@\S+\.\S+/.test(value);
+    }
+
+    async function startCheckout() {
+      const email = emailInput.value.trim();
+      errorBox.style.display = "none";
+
+      if (!email) {
+        errorBox.textContent = "Please enter your email.";
         errorBox.style.display = "block";
-        checkoutButton.disabled = false;
-        checkoutButton.innerHTML = "<span>Buy Key</span>";
+        return;
+      }
+      if (!validateEmail(email)) {
+        errorBox.textContent = "Invalid email format.";
+        errorBox.style.display = "block";
         return;
       }
 
-      // ⭐ FIXED — Redirect using Stripe session URL from backend
-      window.location.href = data.url;
+      checkoutButton.disabled = true;
+      checkoutButton.innerHTML = "Redirecting…";
 
-    } catch (err) {
-      console.error(err);
-      errorBox.textContent = "Error contacting payment server.";
-      errorBox.style.display = "block";
-      checkoutButton.disabled = false;
-      checkoutButton.innerHTML = "<span>Buy Key</span>";
+      try {
+        const res = await fetch("https://puffn-backend-11jo.onrender.com/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+
+        if (!data.url) {
+          errorBox.textContent = "Could not create payment session.";
+          errorBox.style.display = "block";
+          checkoutButton.disabled = false;
+          checkoutButton.innerHTML = "Buy Key";
+          return;
+        }
+
+        window.location.href = data.url;
+
+      } catch (err) {
+        errorBox.textContent = "Server error. Try again.";
+        errorBox.style.display = "block";
+        checkoutButton.disabled = false;
+        checkoutButton.innerHTML = "Buy Key";
+      }
     }
-  }
 
-  checkoutButton.addEventListener("click", startCheckout);
-</script>
+    checkoutButton.addEventListener("click", startCheckout);
+  </script>
+
+</body>
+</html>
