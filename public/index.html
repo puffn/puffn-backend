@@ -8,8 +8,8 @@
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // Stripe publishable key (you can remove Stripe.js if not using Elements)
-  const stripe = Stripe("pk_live_51SY4eoD3fPIqoTp3I5VGQSbMKRTcUwZCGqeG0ojAzXt9ZR1darPllEdWxYUTer0fbU6sn9u5DsjXgnUWDUgK4ihV00gEK3zCQG");
+  // Your publishable Stripe key (optional)
+  const stripe = Stripe("pk_test_YOUR_PUBLISHABLE_KEY_HERE");
 
   const emailInput = document.getElementById("email");
   const errorBox = document.getElementById("error-message");
@@ -25,18 +25,17 @@
     return /\S+@\S+\.\S+/.test(value);
   }
 
-  /* -------------- UPDATED PAYMENT LOGIC -------------- */
   async function startCheckout() {
     const email = emailInput.value.trim();
     errorBox.style.display = "none";
 
     if (!email) {
-      errorBox.textContent = "Please enter the email where we should send your key.";
+      errorBox.textContent = "Please enter the email where your key will be delivered.";
       errorBox.style.display = "block";
       return;
     }
     if (!validateEmail(email)) {
-      errorBox.textContent = "That doesn’t look like a valid email address.";
+      errorBox.textContent = "Invalid email format.";
       errorBox.style.display = "block";
       return;
     }
@@ -45,6 +44,7 @@
     checkoutButton.innerHTML = "<span>Redirecting…</span>";
 
     try {
+      // ⭐ FIXED — Calls your Render backend correctly
       const res = await fetch("https://puffn-backend-11jo.onrender.com/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,22 +52,22 @@
       });
 
       const data = await res.json();
-      console.log("Stripe session:", data);
+      console.log("Stripe Response:", data);
 
       if (!data.url) {
-        errorBox.textContent = "Payment server error. Please try again.";
+        errorBox.textContent = "Could not create a payment session.";
         errorBox.style.display = "block";
         checkoutButton.disabled = false;
         checkoutButton.innerHTML = "<span>Buy Key</span>";
         return;
       }
 
-      // Redirect user to Stripe Checkout
+      // ⭐ FIXED — Redirect using Stripe session URL from backend
       window.location.href = data.url;
 
     } catch (err) {
       console.error(err);
-      errorBox.textContent = "Could not connect to payment server.";
+      errorBox.textContent = "Error contacting payment server.";
       errorBox.style.display = "block";
       checkoutButton.disabled = false;
       checkoutButton.innerHTML = "<span>Buy Key</span>";
