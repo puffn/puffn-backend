@@ -11,8 +11,12 @@ dotenv.config();
 const app = express();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Enable CORS
-app.use(cors());
+// CORS (allow Netlify domain)
+app.use(cors({
+  origin: "https://steamubilink.netlify.app",
+  methods: ["POST", "GET"],
+  credentials: true
+}));
 
 // JSON + URL parsing
 app.use(express.json());
@@ -24,10 +28,7 @@ app.use(
   bodyParser.raw({ type: "application/json" })
 );
 
-// Serve frontend
-app.use(express.static("public"));
-
-/* ORDER COUNTER -------------------------------- */
+/* ----------------------- ORDER COUNTER ----------------------- */
 function getNextOrderNumber() {
   let count = 0;
 
@@ -37,31 +38,27 @@ function getNextOrderNumber() {
   }
 
   count += 1;
-
   fs.writeFileSync("orders.json", JSON.stringify({ count }, null, 2));
-
   return String(count).padStart(4, "0");
 }
 
-/* LOAD NEXT KEY -------------------------------- */
+/* ----------------------- KEY SYSTEM --------------------------- */
 function getNextKey() {
   const file = "keys.txt";
-
   if (!fs.existsSync(file)) return null;
 
   const keys = fs.readFileSync(file, "utf8")
-    .split("\n")
-    .filter(k => k.trim() !== "");
+    .trim()
+    .split("\n");
 
   if (keys.length === 0) return null;
 
   const key = keys[0];
   fs.writeFileSync(file, keys.slice(1).join("\n"));
-
   return key;
 }
 
-/* EMAIL SYSTEM --------------------------------- */
+/* ----------------------- EMAIL SYSTEM ------------------------- */
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
@@ -93,7 +90,7 @@ function generateEmailHTML(orderNumber, email, key, amount) {
   </html>`;
 }
 
-/* CHECKOUT ------------------------------------- */
+/* ----------------------- CHECKOUT ----------------------------- */
 app.post("/create-checkout-session", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -106,17 +103,18 @@ app.post("/create-checkout-session", async (req, res) => {
         },
       ],
       customer_email: req.body.email,
-      success_url: "https://heartfelt-manatee-9fe306.netlify.app/",
-      cancel_url: "https://heartfelt-manatee-9fe306.netlify.app/",
+      success_url: "https://steamubilink.netlify.app/success",
+      cancel_url: "https://steamubilink.netlify.app/cancel",
     });
 
-    res.json({ url: session.url });
+    return res.json({ url: session.url });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Checkout error:", err.message);
+    return res.status(400).json({ error: err.message });
   }
 });
 
-/* WEBHOOK -------------------------------------- */
+/* ----------------------- WEBHOOK ------------------------------ */
 app.post("/webhook", (req, res) => {
   const sig = req.headers["stripe-signature"];
 
@@ -129,7 +127,6 @@ app.post("/webhook", (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.log("⚠ Webhook signature error:", err.message);
     return res.status(400).send("Webhook error");
   }
 
@@ -154,10 +151,10 @@ app.post("/webhook", (req, res) => {
     console.log("📧 Email sent! Delivered key:", key);
   }
 
-  res.json({ received: true });
+  return res.json({ received: true });
 });
 
-/* START ---------------------------------------- */
-app.listen(10000, () =>
-  console.log("🚀 Puffn backend running on port 10000!")
+/* ----------------------- START SERVER -------------------------- */
+app.listen(process.env.PORT || 10000, () =>
+  console.log("🚀 Render backend online")
 );
