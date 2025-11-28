@@ -106,8 +106,8 @@ app.post("/create-checkout-session", async (req, res) => {
         },
       ],
       customer_email: req.body.email,
-      success_url: "https://puffn.net/success.html",
-      cancel_url: "https://puffn.net/cancel.html",
+      success_url: "https://heartfelt-manatee-9fe306.netlify.app/",
+      cancel_url: "https://heartfelt-manatee-9fe306.netlify.app/",
     });
 
     res.json({ url: session.url });
